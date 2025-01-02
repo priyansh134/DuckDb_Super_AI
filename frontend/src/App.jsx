@@ -12,7 +12,7 @@ const App = () => {
   const [display, setDisplay] = useState(false) // Control whether the query results section is diplayed 
   const [filePath, setfilePath] = useState(null) //store the uploaded file server path
 
- const url = ""
+ const url = "https://duckdb-super-ai.onrender.com"
  
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
