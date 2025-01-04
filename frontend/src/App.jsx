@@ -3,7 +3,7 @@ import axios from 'axios';
 import Papa from 'papaparse';
 import { ChartNoAxesColumnIncreasing, Users, Calendar, DollarSign, Paperclip, Plus, ArrowRight, Download } from 'lucide-react';
 import Skeleton from './components/Skeleton';
-
+import ReactECharts from 'echarts-for-react';
 const App = () => {
 
   const [userQuery, setuserQuery] = useState(""); // Store user input query or selected sample query 
@@ -16,7 +16,7 @@ const App = () => {
  
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [badgeCount, setBadgeCount] = useState(0);// track the numbers of the selected files
+  const [badgeCount, setBadgeCount] = useState(0); // track the numbers of the selected files
 
   const toggleDropdownMenu = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -133,6 +133,76 @@ const App = () => {
       console.error("Error generating the download:", error);
     }
   };
+
+ const chartOptions = () => {
+  // Assuming your dataRows is in the following structure:
+  // dataRows = [
+  //   ['Header1', 'Header2', 'Header3'],
+  //   ['Value1', 'Value2', 'Value3'],
+  //   ['Value4', 'Value5', 'Value6'],
+  //   ...
+  // ]
+
+  // Get the first row (header) for the x-axis categories
+  const categories = dataRows[0] || [];
+  
+  // Process your data (adjust based on the column positions you want for each chart)
+  const values = dataRows.slice(1).map(row => row[0]); // Adjust based on which column you want for the bar chart
+  const linearValues = dataRows.slice(1).map(row => row[1]); // Adjust for line chart
+  const histogramValues = dataRows.slice(1).map(row => row[2]); // Adjust for histogram
+
+  return {
+    xAxis: {
+      type: 'category',
+      data: categories, // X-axis categories (first row from CSV)
+      name: 'Category',  // X-axis label
+    },
+    yAxis: {
+      type: 'value',
+      name: 'Value',  // Y-axis label
+    },
+    series: [
+      {
+        data: values,
+        type: 'bar',
+        name: 'Bar Chart',  // Bar chart
+        color: '#FF6347',  // Customize color
+      },
+      {
+        data: linearValues,
+        type: 'line',
+        name: 'Linear Graph',
+        color: '#1E90FF',  // Customize line color
+        smooth: true,  // Smooth the line
+        lineStyle: {
+          width: 2,  // Line width
+        },
+      },
+      {
+        name: 'Histogram',
+        type: 'bar',
+        data: histogramValues,
+        color: '#32CD32',  // Histogram color
+        barWidth: 15,  // Set width for the histogram bars
+        emphasis: {
+          itemStyle: {
+            color: '#228B22',  // Highlight color on hover
+          }
+        }
+      }
+    ],
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'cross',  // Cross pointer
+      },
+    },
+  };
+};
+
+  
+ 
+
 
   return (
     <div className="flex w-full h-full items-center justify-center flex-col py-10 px-10 gap-4">
@@ -289,6 +359,11 @@ const App = () => {
                   </tbody>
                 </table>
               </div>
+              {/* ECharts Bar Chart */}
+              <ReactECharts
+                option={chartOptions()}
+                style={{ width: '100%', height: '400px' }}
+              />
             </>
           }
         </div>
