@@ -436,7 +436,7 @@ const App = () => {
                         onClick={() => selectFile("https://res.cloudinary.com/dn2filzyc/raw/upload/v1735426746/sales_data")}
                         className="block w-full text-left px-4 py-2 hover:bg-gray-300"
                       >
-                        sales.csv
+                        data1.csv
                       </button>
                     </li>
                     <li>
@@ -444,7 +444,7 @@ const App = () => {
                         onClick={() => selectFile("https://res.cloudinary.com/dn2filzyc/raw/upload/v1735426786/customer_data")}
                         className="block w-full text-left px-4 py-2 hover:bg-gray-300"
                       >
-                        customer.csv
+                        data2.csv
                       </button>
                     </li>
                   </ul>
