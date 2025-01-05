@@ -133,76 +133,216 @@ const App = () => {
       console.error("Error generating the download:", error);
     }
   };
-
- const chartOptions = () => {
-  // Assuming your dataRows is in the following structure:
-  // dataRows = [
-  //   ['Header1', 'Header2', 'Header3'],
-  //   ['Value1', 'Value2', 'Value3'],
-  //   ['Value4', 'Value5', 'Value6'],
-  //   ...
-  // ]
-
-  // Get the first row (header) for the x-axis categories
-  const categories = dataRows[0] || [];
   
-  // Process your data (adjust based on the column positions you want for each chart)
-  const values = dataRows.slice(1).map(row => row[0]); // Adjust based on which column you want for the bar chart
-  const linearValues = dataRows.slice(1).map(row => row[1]); // Adjust for line chart
-  const histogramValues = dataRows.slice(1).map(row => row[2]); // Adjust for histogram
-
-  return {
-    xAxis: {
-      type: 'category',
-      data: categories, // X-axis categories (first row from CSV)
-      name: 'Category',  // X-axis label
-    },
-    yAxis: {
-      type: 'value',
-      name: 'Value',  // Y-axis label
-    },
-    series: [
-      {
-        data: values,
-        type: 'bar',
-        name: 'Bar Chart',  // Bar chart
-        color: '#FF6347',  // Customize color
+  const chartOptions = () => {
+    // Assuming your dataRows is in the following structure:
+    // dataRows = [
+    //   ['Header1', 'Header2', 'Header3'],
+    //   ['Department1', 50, ...],
+    //   ['Department2', 30, ...],
+    //   ...
+    
+  
+    // Find the index of "Name" and "Number of employees" columns dynamically
+    const header = dataRows[0]; // First row contains headers
+    const nameIndex = header.indexOf('Name');  // Find the "Name" column
+    const employeesIndex = header.indexOf('Number of employees');  // Find the "Number of employees" column
+  
+    // Check if required columns are found
+    if (nameIndex === -1 || employeesIndex === -1) {
+      // Show a message on the page
+      const messageElement = document.createElement('div');
+      messageElement.style.color = 'red';
+      messageElement.style.fontSize = '16px';
+      messageElement.style.fontWeight = 'bold';
+      
+  
+      // Append the message to the body or a specific section
+      document.body.appendChild(messageElement);
+  
+      return {};  // Continue without exiting the page
+    }
+  
+    // Get the data for "Name" and "Number of employees"
+    const categories = dataRows.slice(1).map(row => row[nameIndex]);  // Get the "Name" column
+    const values = dataRows.slice(1).map(row => row[employeesIndex]);  // Get the "Number of employees" column
+  
+    return {
+      xAxis: {
+        type: 'category',
+        data: categories, // X-axis categories (from the "Name" column)
+        name: 'Department',  // X-axis label
       },
-      {
-        data: linearValues,
-        type: 'line',
-        name: 'Linear Graph',
-        color: '#1E90FF',  // Customize line color
-        smooth: true,  // Smooth the line
-        lineStyle: {
-          width: 2,  // Line width
+      yAxis: {
+        type: 'value',
+        name: 'Number of Employees',  // Y-axis label
+      },
+      series: [
+        {
+          data: values,
+          type: 'bar',
+          name: 'Number of Employees',  // Bar chart
+          color: '#FF6347',  // Customize color
+        }
+      ],
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',  // Cross pointer
         },
       },
-      {
-        name: 'Histogram',
-        type: 'bar',
-        data: histogramValues,
-        color: '#32CD32',  // Histogram color
-        barWidth: 15,  // Set width for the histogram bars
-        emphasis: {
-          itemStyle: {
-            color: '#228B22',  // Highlight color on hover
-          }
-        }
-      }
-    ],
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'cross',  // Cross pointer
-      },
-    },
+    };
   };
-};
+  
+  
 
   
  
-
+  const pieChartOptions = () => {
+    if (!dataRows || dataRows.length < 2) {
+      return {};
+    }
+  
+    // Extract column names (headers)
+    const headers = dataRows[0];
+    const industryIndex = headers.indexOf("Country"); // Replace with the actual column name for industries
+  
+    if (industryIndex === -1) {
+      console.error("Industry column not found in dataRows.");
+      return {};
+    }
+  
+    // Count occurrences of each industry
+    const industryCounts = {};
+    dataRows.slice(1).forEach(row => {
+      const industry = row[industryIndex];
+      if (industry) {
+        industryCounts[industry] = (industryCounts[industry] || 0) + 1;
+      }
+    });
+  
+    // Prepare data for the pie chart
+    const pieData = Object.entries(industryCounts).map(([industry, count]) => ({
+      name: industry,
+      value: count,
+    }));
+  
+    return {
+      tooltip: {
+        trigger: 'item',
+      },
+      legend: {
+        top: '5%',
+        left: 'center',
+      },
+      series: [
+        {
+          name: 'Country',
+          type: 'pie',
+          radius: '50%',
+          data: pieData,
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)',
+            },
+          },
+          label: {
+            formatter: '{b}: {d}%',  // Show the industry name and percentage
+          },
+        },
+      ],
+      graphic: [
+        {
+          type: 'text',
+          left: 'center',  // Center the text horizontally
+          top: '85%',  // Position the text below the pie chart
+          style: {
+            text: 'Percentage Distribution of The Company and Country wise wise',  // The text to display
+            fill: '#333',  // Text color
+            fontSize: 16,  // Font size
+            fontWeight: 'bold',  // Make the text bold
+          },
+        },
+      ],
+    };
+  };
+  
+  
+  
+  const pieChartOptionss = () => {
+    if (!dataRows || dataRows.length < 2) {
+      return {};
+    }
+  
+    // Extract column names (headers)
+    const headers = dataRows[0];
+    const industryIndex = headers.indexOf("Industry"); // Replace with the actual column name for industries
+  
+    if (industryIndex === -1) {
+      console.error("Industry column not found in dataRows.");
+      return {};
+    }
+  
+    // Count occurrences of each industry
+    const industryCounts = {};
+    dataRows.slice(1).forEach(row => {
+      const industry = row[industryIndex];
+      if (industry) {
+        industryCounts[industry] = (industryCounts[industry] || 0) + 1;
+      }
+    });
+  
+    // Prepare data for the pie chart
+    const pieData = Object.entries(industryCounts).map(([industry, count]) => ({
+      name: industry,
+      value: count,
+    }));
+  
+    return {
+      tooltip: {
+        trigger: 'item',
+      },
+      legend: {
+        top: '5%',
+        left: 'center',
+      },
+      series: [
+        {
+          name: 'Industry',
+          type: 'pie',
+          radius: '50%',
+          data: pieData,
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)',
+            },
+          },
+          label: {
+            formatter: '{b}: {d}%',  // Show the industry name and percentage
+          },
+        },
+      ],
+      graphic: [
+        {
+          type: 'text',
+          left: 'center',  // Center the text horizontally
+          top: '85%',  // Position the text below the pie chart
+          style: {
+            text: 'Percentage Distribution of The Company and Industry wise',  // The text to display
+            fill: '#333',  // Text color
+            fontSize: 16,  // Font size
+            fontWeight: 'bold',  // Make the text bold
+          },
+        },
+      ],
+    };
+  };
+  
+  
 
   return (
     <div className="flex w-full h-full items-center justify-center flex-col py-10 px-10 gap-4">
@@ -364,6 +504,14 @@ const App = () => {
                 option={chartOptions()}
                 style={{ width: '100%', height: '400px' }}
               />
+              <ReactECharts
+          option={pieChartOptions()}
+          style={{ width: '100%', height: '1000px' }}
+        />
+        <ReactECharts
+          option={pieChartOptionss()}
+          style={{ width: '100%', height: '1000px' }}
+        />
             </>
           }
         </div>
