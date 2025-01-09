@@ -5,10 +5,14 @@ import { ChartNoAxesColumnIncreasing, Users, Calendar, DollarSign, Paperclip, Pl
 import Skeleton from './components/Skeleton';
 import ReactECharts from 'echarts-for-react';
 import { GoogleLogin } from '@react-oauth/google';
+import MicIcon from '@mui/icons-material/Mic';
+import { QueryInput } from "./components/QueryInput.jsx";
+
 
 const App = () => {
 
   const [userQuery, setuserQuery] = useState(""); // Store user input query or selected sample query 
+  const [userQueryy, setUserQueryy] = useState("");
   const [dataRows, setdataRows] = useState([]);// Hold the csv data to display the result
   const [isLoading, setIsLoading] = useState(false) // Track the loading state when SQL is generating
   const [display, setDisplay] = useState(false) // Control whether the query results section is diplayed 
@@ -19,10 +23,16 @@ const App = () => {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [badgeCount, setBadgeCount] = useState(0); // track the numbers of the selected files
+  const [loading, setLoading] = useState(false);
 
   const toggleDropdownMenu = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
+
+  const handleQueryChange = (newQuery) => {
+    setUserQueryy(newQuery);
+  };
+
 
   const selectFile = (data) => {
     setBadgeCount(1);
@@ -32,6 +42,7 @@ const App = () => {
 
   const setDefaultQuery = (data) => {
     setuserQuery(data)
+    
   }
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -78,50 +89,57 @@ const App = () => {
   // Parses the returned CSV data using papa.parse for rendering in a table
   const generateSQL = async () => {
     try {
-      if (!userQuery) {
-        alert("Please enter a userQuery")
-        return
+      // Check if both queries are empty
+      if (!userQuery && !userQueryy) {
+        alert("Please enter a query");
+        return;
       }
-
+  
+      // Default to `userQueryy` if `userQuery` is empty (or vice versa)
+      const queryToSend = userQueryy || userQuery;
+  
+      // Check if file is uploaded
       if (!filePath) {
-        alert("Please upload a file")
-        return
+        alert("Please upload a file");
+        return;
       }
-
-      console.log(userQuery, filePath)
-
-      setIsLoading(true)
-      setDisplay(true)
+  
+      console.log(queryToSend, filePath);
+  
+      setIsLoading(true);
+      setDisplay(true);
+  
+      // Send the query and filePath to backend
       const res = await axios.post(`${url}/generate_sql`, {
-        text: userQuery,
-        filePath: filePath
+        text: queryToSend,  // Send whichever query is available
+        filePath: filePath,
       }, { responseType: 'blob' });
-
+  
       if (res.status >= 500) {
-        alert("Internal Server Error or userQuery entered is not relevent to the file.")
-        return
+        alert("Internal Server Error or the query entered is not relevant to the file.");
+        return;
       }
-
+  
       const reader = new FileReader();
       reader.onload = () => {
         const csvText = reader.result;
-
+  
         Papa.parse(csvText, {
           complete: (results) => {
             setdataRows(results.data);
-            setIsLoading(false)
+            setIsLoading(false);
           },
         });
       };
       reader.readAsText(res.data);
     } catch (error) {
       console.error('Error fetching CSV:', error);
-      setIsLoading(false)
-      setDisplay(false)
-      setBadgeCount(0)
+      setIsLoading(false);
+      setDisplay(false);
+      setBadgeCount(0);
     }
   };
-
+  
   // Convert the parsed table data (dataRows ) to adoenloadable CSV format
   const handleDownload = () => {
     if (!dataRows || dataRows.length === 0) {
@@ -412,12 +430,17 @@ const App = () => {
               </button>
             </div>
             <div className="flex flex-col h-full shadow-sm rounded-xl p-3 border-[1px] border-gray-300 mt-3">
-              <textarea
-                className="flex-1 placeholder-gray-500 focus:outline-none focus:ring-0 border-none bg-transparent"
-                placeholder="Enter your natural language query..."
-                onChange={(e) => setuserQuery(e.target.value)}
-                value={userQuery}
-              />
+          <textarea
+  className="flex-1 placeholder-gray-500 focus:outline-none focus:ring-0 border-none bg-transparent"
+  placeholder="Enter your natural language query..."
+  onChange={(e) => {
+    setuserQuery(e.target.value);  // Set text input when user types
+    setUserQueryy(e.target.value); // Update the speech input as well to ensure consistency
+  }}
+  value={userQueryy || userQuery} // Display whichever is updated
+/>
+
+       
               <div className="flex flex-row">
                 <label className="flex items-center mx-2 cursor-pointer">
                   <Paperclip size={18} />
@@ -474,7 +497,13 @@ const App = () => {
                       </ul>
                     </div>
                   )}
+                  
                 </div>
+                <QueryInput
+          onQueryChange={handleQueryChange}
+          query={userQueryy}
+          isLoading={loading}
+        />
                 <button
                   className={`bg-black py-1 px-2 rounded-lg mx-2 ml-auto ${
                     isLoading ? "bg-slate-400 cursor-not-allowed" : ""
