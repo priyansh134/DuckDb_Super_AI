@@ -7,6 +7,9 @@ import ReactECharts from 'echarts-for-react';
 import { GoogleLogin } from '@react-oauth/google';
 import MicIcon from '@mui/icons-material/Mic';
 import { QueryInput } from "./components/QueryInput.jsx";
+import Header from './components/Header';
+import Footer from './components/Footer';
+
 
 
 const App = () => {
@@ -19,7 +22,7 @@ const App = () => {
   const [filePath, setfilePath] = useState(null) //store the uploaded file server path
 
  const url = "https://duckdb-super-ai.onrender.com"
- 
+
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [badgeCount, setBadgeCount] = useState(0); // track the numbers of the selected files
@@ -374,14 +377,20 @@ const App = () => {
   
   
 
+
   return (
+    
     <div className="flex w-full h-full items-center justify-center flex-col py-10 px-10 gap-4">
+     <Header></Header>
       {!isLoggedIn && (
         <GoogleLogin
           onSuccess={handleLoginSuccess}
           onFailure={handleLoginFailure}
         />
+        
+
       )}
+    
       {isLoggedIn && (
         <>
           <div className="flex flex-col gap-3 mt-9 justify-center items-center">
@@ -589,6 +598,7 @@ const App = () => {
           )}
         </>
       )}
+      
     </div>
   );
   

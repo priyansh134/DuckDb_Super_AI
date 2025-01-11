@@ -99,12 +99,11 @@ def generate_sql():
 
     # Generate a prompt for the AI model based on the user input and CSV structure
     prompt = (
-        f"You are an expert SQL generator. Given the following text request: \"{text_input}\" "
-        f"and the structure of this CSV file: {df.head().to_string(index=False)}, "
-        f"give answer in SQL query only irrespective of actual meaning and use table name as uploaded_csv and use proper alias where needed "
-        f"take column headings as they are without adding any character to it or deleting white spaces "
-        f"It should contain only SQL nothing else"
-    )
+    f"Given the following text request: \"{text_input}\" and the structure of this CSV file: {df.head().to_string(index=False)}, "
+    f"generate an SQL query using the table name `uploaded_csv`. Use appropriate aliases where necessary, and keep the column names exactly as they are, without adding any characters or removing white spaces. "
+    f"Provide only the SQL query, without any additional explanation."
+)
+
 
     try:
         # Generate SQL query using the AI model
