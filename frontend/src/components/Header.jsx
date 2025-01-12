@@ -10,7 +10,7 @@ const Header = () => {
 
       <div className="text-box">
         <h1 className="heading-primary">
-          <span className="heading-primary-main">We give the fastest data Stories.</span>
+          <span className="heading-primary-main">We give Data Stories.</span>
           <span className="heading-primary-sub">We make the Data View according to your choice</span>
         </h1>
         
