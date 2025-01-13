@@ -460,59 +460,55 @@ const ChatPage = () => {
                     accept=".csv,.txt"
                   />
                 </label>
-                <div className="relative hover:border-2 border-black rounded-lg py-1">
-                  <button
-                    id="dropdownButton"
-                    onClick={toggleDropdownMenu}
-                    className="mx-2 relative"
-                  >
-                    <Plus size={16} />
-                  </button>
-                  {badgeCount > 0 && (
-                    <div className="absolute inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-black border-2 border-white rounded-full top-0 right-0 transform translate-x-1/2 -translate-y-1/2 z-10 dark:border-gray-900">
-                      {badgeCount}
-                    </div>
-                  )}
-                  {isDropdownOpen && (
-                    <div
-                      id="dropdown"
-                      className="absolute z-10 divide-y divide-gray-100 rounded-lg shadow w-44 mt-2 bg-white"
-                    >
-                      <ul className="py-2 text-sm" aria-labelledby="dropdownButton">
-                        <li>
-                          <button
-                            onClick={() =>
-                              selectFile(
-                                "#"
-                              )
-                            }
-                            className="block w-full text-left px-4 py-2 hover:bg-gray-300"
-                          >
-                            data1.csv
-                          </button>
-                        </li>
-                        <li>
-                          <button
-                            onClick={() =>
-                              selectFile(
-                                "#"
-                              )
-                            }
-                            className="block w-full text-left px-4 py-2 hover:bg-gray-300"
-                          >
-                            data2.csv
-                          </button>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-                     
-                </div>
-                <QueryInput
-          onQueryChange={handleQueryChange}
-          query={userQueryy}
-          isLoading={loading}
-        />
+                
+                <div className="relative hover:border-2 border-black rounded-lg py-1 flex items-center">
+  <button
+    id="dropdownButton"
+    onClick={toggleDropdownMenu}
+    className="mx-2 relative"
+  >
+    <Plus size={16} />
+  </button>
+  {badgeCount > 0 && (
+    <div className="absolute inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-black border-2 border-white rounded-full top-0 right-0 transform translate-x-1/2 -translate-y-1/2 z-10 dark:border-gray-900">
+      {badgeCount}
+    </div>
+  )}
+  {isDropdownOpen && (
+    <div
+      id="dropdown"
+      className="absolute z-10 divide-y divide-gray-100 rounded-lg shadow w-44 mt-2 bg-white"
+    >
+      <ul className="py-2 text-sm" aria-labelledby="dropdownButton">
+        <li>
+          <button
+            onClick={() => selectFile("#")}
+            className="block w-full text-left px-4 py-2 hover:bg-gray-300"
+          >
+            data1.csv
+          </button>
+        </li>
+        <li>
+          <button
+            onClick={() => selectFile("#")}
+            className="block w-full text-left px-4 py-2 hover:bg-gray-300"
+          >
+            data2.csv
+          </button>
+        </li>
+      </ul>
+    </div>
+  )}
+  
+  
+</div>
+
+<QueryInput
+      onQueryChange={handleQueryChange}
+      query={userQueryy}
+      isLoading={loading}
+    />
+        
                 <button
                   className={`bg-black py-1 px-2 rounded-lg mx-2 ml-auto ${
                     isLoading ? "bg-slate-400 cursor-not-allowed" : ""

@@ -46,7 +46,7 @@ export function QueryInput({ onQueryChange, query, isLoading }) {
   };
 
   return (
-    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
+    <div className="flex items-center">
       <button
         type="button"
         onClick={toggleVoiceInput}
