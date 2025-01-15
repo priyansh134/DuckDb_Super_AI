@@ -1,65 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Papa from 'papaparse';
-import { ChartNoAxesColumnIncreasing, Users, Calendar, DollarSign, Paperclip, Plus, ArrowRight, Download } from 'lucide-react';
-import Skeleton from '../components/Skeleton';
+import { BarChartIcon, LineChart, PieChart, Users, Calendar, DollarSign, Paperclip, Plus, ArrowRight, Download, ChevronDown } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import { GoogleLogin } from '@react-oauth/google';
-import MicIcon from '@mui/icons-material/Mic';
-import { QueryInput } from "../components/QueryInput.jsx";
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-
-
+import { Navbar } from '../components/Navbar';
+import Skeleton from '../components/Skeleton';
+import { QueryInput } from "../components/QueryInput";
 
 const ChatPage = () => {
-
-  const [userQuery, setuserQuery] = useState(""); // Store user input query or selected sample query 
-  const [userQueryy, setUserQueryy] = useState(""); // store the user voice query
-  const [dataRows, setdataRows] = useState([]);// Hold the csv data to display the result
-  const [isLoading, setIsLoading] = useState(false) // Track the loading state when SQL is generating
-  const [display, setDisplay] = useState(false) // Control whether the query results section is diplayed 
-  const [filePath, setfilePath] = useState(null) //store the uploaded file server path
-
- const url = "https://duckdb-super-ai.onrender.com"
-
-
+  const [userQuery, setuserQuery] = useState("");
+  const [userQueryy, setUserQueryy] = useState("");
+  const [dataRows, setdataRows] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [display, setDisplay] = useState(false);
+  const [filePath, setfilePath] = useState(null);
+  const [selectedBusiness, setSelectedBusiness] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [badgeCount, setBadgeCount] = useState(0); // track the numbers of the selected files
+  const [badgeCount, setBadgeCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [selectedChartType, setSelectedChartType] = useState("bar");
+  const [chartOptions, setChartOptions] = useState({});
 
-  const toggleDropdownMenu = () => {
-    setIsDropdownOpen(!isDropdownOpen);
-  };
+  const url = "https://duckdb-super-ai.onrender.com";
+
+  const businesses = [
+    {
+      name: "Factory Girl Restaurant",
+      address: "89 Stratford Lane",
+      metrics: "1.40M - 661.7K"
+    },
+    {
+      name: "Downtown Cafe",
+      address: "123 Main St",
+      metrics: "890K - 445.2K"
+    }
+  ];
+
+  const chartTypes = [
+    { type: "bar", icon: BarChartIcon, label: "Bar Chart" },
+    { type: "line", icon: LineChart, label: "Line Chart" },
+    { type: "pie", icon: PieChart, label: "Pie Chart" },
+  ];
 
   const handleQueryChange = (newQuery) => {
     setUserQueryy(newQuery);
   };
 
-
   const selectFile = (data) => {
     setBadgeCount(1);
     setIsDropdownOpen(false);
-    setfilePath(data)
+    setfilePath(data);
   };
 
   const setDefaultQuery = (data) => {
-    setuserQuery(data)
-    
-  }
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  const handleLoginSuccess = (credentialResponse) => {
-    console.log(credentialResponse);
-    setIsLoggedIn(true); // Update state to show the content below
+    setuserQuery(data);
+    setUserQueryy(data);
   };
 
-  const handleLoginFailure = () => {
-    console.log('Login Failed');
-  };
-
-  // handles file uploaded to a backend server using axios.
- // Shows success or error alerts upon completion
   const uploadFile = async (file) => {
     if (!file) {
       throw new Error('No file provided for upload.');
@@ -74,59 +71,40 @@ const ChatPage = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      console.log(res.data)
-      setfilePath(res.data.filePath)
-      alert("File uploaded successfully!")
+      setfilePath(res.data.filePath);
+      alert("File uploaded successfully!");
       return res.data;
     } catch (error) {
       console.error('Error uploading file:', error);
-      if (error.res) {
-        throw new Error(error.res.data.error || 'File upload failed.');
-      } else {
-        throw new Error('An unexpected error occurred while uploading the file.');
-      }
+      throw new Error(error.response?.data?.error || 'File upload failed.');
     }
   };
 
-  // Send the query (userQuery) and file path (filePath) to the  server and generate results
-  // Parses the returned CSV data using papa.parse for rendering in a table
   const generateSQL = async () => {
     try {
-      // Check if both queries are empty
       if (!userQuery && !userQueryy) {
         alert("Please enter a query");
         return;
       }
-  
-      // Default to `userQueryy` if `userQuery` is empty (or vice versa)
+
       const queryToSend = userQueryy || userQuery;
-  
-      // Check if file is uploaded
+
       if (!filePath) {
         alert("Please upload a file");
         return;
       }
-  
-      console.log(queryToSend, filePath);
-  
+
       setIsLoading(true);
       setDisplay(true);
-  
-      // Send the query and filePath to backend
+
       const res = await axios.post(`${url}/generate_sql`, {
-        text: queryToSend,  // Send whichever query is available
+        text: queryToSend,
         filePath: filePath,
       }, { responseType: 'blob' });
-  
-      if (res.status >= 500) {
-        alert("Internal Server Error or the query entered is not relevant to the file.");
-        return;
-      }
-  
+
       const reader = new FileReader();
       reader.onload = () => {
         const csvText = reader.result;
-  
         Papa.parse(csvText, {
           complete: (results) => {
             setdataRows(results.data);
@@ -142,8 +120,7 @@ const ChatPage = () => {
       setBadgeCount(0);
     }
   };
-  
-  // Convert the parsed table data (dataRows ) to adoenloadable CSV format
+
   const handleDownload = () => {
     if (!dataRows || dataRows.length === 0) {
       alert("No data available to download");
@@ -151,7 +128,6 @@ const ChatPage = () => {
     }
 
     try {
-
       const csvString = Papa.unparse(dataRows);
       const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
@@ -166,438 +142,292 @@ const ChatPage = () => {
       console.error("Error generating the download:", error);
     }
   };
-  
-  const chartOptions = () => {
-    // Assuming your dataRows is in the following structure:
-    // dataRows = [
-    //   ['Header1', 'Header2', 'Header3'],
-    //   ['Department1', 50, ...],
-    //   ['Department2', 30, ...],
-    //   ...
-    
-  
-    // Find the index of "Name" and "Number of employees" columns dynamically
-    const header = dataRows[0]; // First row contains headers
-    const nameIndex = header.indexOf('Name');  // Find the "Name" column
-    const employeesIndex = header.indexOf('Number of employees');  // Find the "Number of employees" column
-  
-    // Check if required columns are found
-    if (nameIndex === -1 || employeesIndex === -1) {
-      // Show a message on the page
-      const messageElement = document.createElement('div');
-      messageElement.style.color = 'red';
-      messageElement.style.fontSize = '16px';
-      messageElement.style.fontWeight = 'bold';
-      
-  
-      // Append the message to the body or a specific section
-      document.body.appendChild(messageElement);
-  
-      return {};  // Continue without exiting the page
-    }
-  
-    // Get the data for "Name" and "Number of employees"
-    const categories = dataRows.slice(1).map(row => row[nameIndex]);  // Get the "Name" column
-    const values = dataRows.slice(1).map(row => row[employeesIndex]);  // Get the "Number of employees" column
-  
-    return {
-      xAxis: {
-        type: 'category',
-        data: categories, // X-axis categories (from the "Name" column)
-        name: 'Department',  // X-axis label
-      },
-      yAxis: {
-        type: 'value',
-        name: 'Number of Employees',  // Y-axis label
-      },
-      series: [
-        {
-          data: values,
-          type: 'bar',
-          name: 'Number of Employees',  // Bar chart
-          color: '#FF6347',  // Customize color
-        }
-      ],
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'cross',  // Cross pointer
-        },
-      },
-    };
-  };
-  
-  
 
-  
- 
-  const pieChartOptions = () => {
-    if (!dataRows || dataRows.length < 2) {
-      return {};
-    }
-  
-    // Extract column names (headers)
-    const headers = dataRows[0];
-    const industryIndex = headers.indexOf("Country"); // Replace with the actual column name for industries
-  
-    if (industryIndex === -1) {
-      console.error("Industry column not found in dataRows.");
-      return {};
-    }
-  
-    // Count occurrences of each industry
-    const industryCounts = {};
-    dataRows.slice(1).forEach(row => {
-      const industry = row[industryIndex];
-      if (industry) {
-        industryCounts[industry] = (industryCounts[industry] || 0) + 1;
-      }
-    });
-  
-    // Prepare data for the pie chart
-    const pieData = Object.entries(industryCounts).map(([industry, count]) => ({
-      name: industry,
-      value: count,
-    }));
-  
-    return {
-      tooltip: {
-        trigger: 'item',
-      },
-      legend: {
-        top: '5%',
-        left: 'center',
-      },
-      series: [
-        {
-          name: 'Country',
-          type: 'pie',
-          radius: '50%',
-          data: pieData,
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)',
-            },
-          },
-          label: {
-            formatter: '{b}: {d}%',  // Show the industry name and percentage
-          },
-        },
-      ],
-      graphic: [
-        {
-          type: 'text',
-          left: 'center',  // Center the text horizontally
-          top: '85%',  // Position the text below the pie chart
-          style: {
-            text: 'Percentage Distribution of The Company and Country wise wise',  // The text to display
-            fill: '#333',  // Text color
-            fontSize: 16,  // Font size
-            fontWeight: 'bold',  // Make the text bold
-          },
-        },
-      ],
-    };
-  };
-  
-  
-  
-  const pieChartOptionss = () => {
-    if (!dataRows || dataRows.length < 2) {
-      return {};
-    }
-  
-    // Extract column names (headers)
-    const headers = dataRows[0];
-    const industryIndex = headers.indexOf("Industry"); // Replace with the actual column name for industries
-  
-    if (industryIndex === -1) {
-      console.error("Industry column not found in dataRows.");
-      return {};
-    }
-  
-    // Count occurrences of each industry
-    const industryCounts = {};
-    dataRows.slice(1).forEach(row => {
-      const industry = row[industryIndex];
-      if (industry) {
-        industryCounts[industry] = (industryCounts[industry] || 0) + 1;
-      }
-    });
-  
-    // Prepare data for the pie chart
-    const pieData = Object.entries(industryCounts).map(([industry, count]) => ({
-      name: industry,
-      value: count,
-    }));
-  
-    return {
-      tooltip: {
-        trigger: 'item',
-      },
-      legend: {
-        top: '5%',
-        left: 'center',
-      },
-      series: [
-        {
-          name: 'Industry',
-          type: 'pie',
-          radius: '50%',
-          data: pieData,
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)',
-            },
-          },
-          label: {
-            formatter: '{b}: {d}%',  // Show the industry name and percentage
-          },
-        },
-      ],
-      graphic: [
-        {
-          type: 'text',
-          left: 'center',  // Center the text horizontally
-          top: '85%',  // Position the text below the pie chart
-          style: {
-            text: 'Percentage Distribution of The Company and Industry wise',  // The text to display
-            fill: '#333',  // Text color
-            fontSize: 16,  // Font size
-            fontWeight: 'bold',  // Make the text bold
-          },
-        },
-      ],
-    };
-  };
-  
-  
+  const generateChartOptions = () => {
+    if (!dataRows || dataRows.length < 2) return {};
 
+    const headers = dataRows[0];
+    const data = dataRows.slice(1);
+
+    let xAxis, yAxis;
+    if (headers.length >= 2) {
+      xAxis = headers[0];
+      yAxis = headers[1];
+    } else {
+      return {};
+    }
+
+    const seriesData = data.map(row => ({
+      name: row[0],
+      value: parseFloat(row[1]) || 0
+    }));
+
+    switch (selectedChartType) {
+      case 'bar':
+        return {
+          xAxis: {
+            type: 'category',
+            data: seriesData.map(item => item.name),
+          },
+          yAxis: {
+            type: 'value'
+          },
+          series: [{
+            data: seriesData.map(item => item.value),
+            type: 'bar'
+          }],
+          tooltip: {
+            trigger: 'axis'
+          }
+        };
+      case 'line':
+        return {
+          xAxis: {
+            type: 'category',
+            data: seriesData.map(item => item.name),
+          },
+          yAxis: {
+            type: 'value'
+          },
+          series: [{
+            data: seriesData.map(item => item.value),
+            type: 'line'
+          }],
+          tooltip: {
+            trigger: 'axis'
+          }
+        };
+      case 'pie':
+        return {
+          series: [{
+            type: 'pie',
+            data: seriesData,
+            radius: '50%'
+          }],
+          tooltip: {
+            trigger: 'item',
+            formatter: '{a} <br/>{b}: {c} ({d}%)'
+          }
+        };
+      default:
+        return {};
+    }
+  };
+
+  useEffect(() => {
+    if (dataRows.length > 0) {
+      setChartOptions(generateChartOptions());
+    }
+  }, [dataRows, selectedChartType]);
 
   return (
-    
-    <div className="flex w-full h-full items-center justify-center flex-col py-10 px-10 gap-4">
-     <Header></Header>
-      {!isLoggedIn && (
-        <GoogleLogin
-          onSuccess={handleLoginSuccess}
-          onFailure={handleLoginFailure}
-        />
-        
+    <div className="min-h-screen bg-gray-50">
+      <Navbar userName="Alisson" />
 
-      )}
-    
-      {isLoggedIn && (
-        <>
-          <div className="flex flex-col gap-3 mt-9 justify-center items-center">
-            <h2 className="text-3xl font-bold">DuckDB Query Interface</h2>
-            <div className="text-gray-500 text-lg">Analyze your data using natural language queries</div>
-          </div>
-  
-          <div className="flex w-[70vw] items-center">
-            <label className="inline-flex items-center cursor-pointer">
-              <input type="checkbox" value="" className="sr-only peer" checked />
-              <div className="relative w-11 h-6 rounded-full peer dark:bg-gray-500 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-              <span className="ms-3 text-sm font-medium text-gray-900">Duck DB</span>
-            </label>
-          </div>
-  
-          <div className="rounded-xl w-[70vw] h-[50vh] flex p-5 shadow-lg shadow-slate-300 gap-2 flex-col mb-5">
-            <h2 className="text-gray-500">Enter a query below, or try one of these samples:</h2>
-            <div className="flex flex-row gap-2 mt-2 flex-wrap">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl text-center font-semibold mb-6">Overview</h1>
+
+          {/* Business Selector */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-4">Select Business</h2>
+            <div className="relative">
               <button
-                className="flex items-center justify-center shadow-sm shadow-slate-300 rounded-lg py-1 px-2 gap-1 text-sm"
-                onClick={() => setDefaultQuery("Show me the top 5 customers by total orders")}
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full text-left bg-white border rounded-lg px-4 py-2 flex items-center justify-between hover:border-gray-400 transition-colors"
               >
-                <ChartNoAxesColumnIncreasing size={18} />
-                <span>Show me the top 5 customers by total orders</span>
+                <span className="text-gray-700">
+                  {selectedBusiness || "Select a business"}
+                </span>
+                <ChevronDown className="h-5 w-5 text-gray-500" />
               </button>
-              <button
-                className="flex items-center justify-center shadow-sm shadow-slate-300 rounded-lg py-1 px-2 gap-1 text-sm"
-                onClick={() => setDefaultQuery("Calculate average order value by country")}
-              >
-                <Users size={18} />
-                <span>Calculate average order value by country</span>
-              </button>
-              <button
-                className="flex items-center justify-center shadow-sm shadow-slate-300 rounded-lg py-1 px-2 gap-1 text-sm"
-                onClick={() => setDefaultQuery("List all orders from the past month")}
-              >
-                <Calendar size={18} />
-                <span>List all orders from the past month</span>
-              </button>
-              <button
-                className="flex items-center justify-center shadow-sm shadow-slate-300 rounded-lg py-1 px-2 gap-1 text-sm"
-                onClick={() => setDefaultQuery("Find customers who spent more than $1000")}
-              >
-                <DollarSign size={18} />
-                <span>Find customers who spent more than $1000</span>
-              </button>
+              {isDropdownOpen && (
+                <div className="absolute w-full mt-2 bg-white border rounded-lg shadow-lg z-10">
+                  {businesses.map((business, index) => (
+                    <button
+                      key={index}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                      onClick={() => {
+                        setSelectedBusiness(business.name);
+                        setIsDropdownOpen(false);
+                      }}
+                    >
+                      <div className="font-medium">{business.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {business.address} - {business.metrics}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="flex flex-col h-full shadow-sm rounded-xl p-3 border-[1px] border-gray-300 mt-3">
-          <textarea
-  className="flex-1 placeholder-gray-500 focus:outline-none focus:ring-0 border-none bg-transparent"
-  placeholder="Enter your natural language query..."
-  onChange={(e) => {
-    setuserQuery(e.target.value);  // Set text input when user types
-    setUserQueryy(e.target.value); // Update the speech input as well to ensure consistency
-  }}
-  value={userQueryy || userQuery} // Display whichever is updated
-/>
+          </div>
 
-       
-              <div className="flex flex-row">
-                <label className="flex items-center mx-2 cursor-pointer">
-                  <Paperclip size={18} />
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => uploadFile(e.target.files[0])}
-                    accept=".csv,.txt"
-                  />
-                </label>
-                
-                <div className="relative hover:border-2 border-black rounded-lg py-1 flex items-center">
-  <button
-    id="dropdownButton"
-    onClick={toggleDropdownMenu}
-    className="mx-2 relative"
-  >
-    <Plus size={16} />
-  </button>
-  {badgeCount > 0 && (
-    <div className="absolute inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-black border-2 border-white rounded-full top-0 right-0 transform translate-x-1/2 -translate-y-1/2 z-10 dark:border-gray-900">
-      {badgeCount}
-    </div>
-  )}
-  {isDropdownOpen && (
-    <div
-      id="dropdown"
-      className="absolute z-10 divide-y divide-gray-100 rounded-lg shadow w-44 mt-2 bg-white"
-    >
-      <ul className="py-2 text-sm" aria-labelledby="dropdownButton">
-        <li>
-          <button
-            onClick={() => selectFile("#")}
-            className="block w-full text-left px-4 py-2 hover:bg-gray-300"
-          >
-            data1.csv
-          </button>
-        </li>
-        <li>
-          <button
-            onClick={() => selectFile("#")}
-            className="block w-full text-left px-4 py-2 hover:bg-gray-300"
-          >
-            data2.csv
-          </button>
-        </li>
-      </ul>
-    </div>
-  )}
-  
-  
-</div>
-
-<QueryInput
-      onQueryChange={handleQueryChange}
-      query={userQueryy}
-      isLoading={loading}
-    />
-        
+          {/* Query Interface */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-semibold mb-4">Query Interface</h2>
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
                 <button
-                  className={`bg-black py-1 px-2 rounded-lg mx-2 ml-auto ${
-                    isLoading ? "bg-slate-400 cursor-not-allowed" : ""
-                  }`}
-                  onClick={generateSQL}
+                  className="flex items-center px-3 py-1.5 bg-white border rounded-lg text-sm hover:border-gray-400 transition-colors"
+                  onClick={() => setDefaultQuery("Show me the top 5 customers by total orders")}
                 >
-                  <ArrowRight size={18} className="text-white" />
+                  <BarChartIcon className="h-4 w-4 mr-2" />
+                  <span>Top 5 customers</span>
                 </button>
+                <button
+                  className="flex items-center px-3 py-1.5 bg-white border rounded-lg text-sm hover:border-gray-400 transition-colors"
+                  onClick={() => setDefaultQuery("Calculate average order value by country")}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  <span>Average order value</span>
+                </button>
+                {/* Add more sample queries as needed */}
+              </div>
+
+              <div className="border rounded-lg p-4">
+
+                <textarea
+                  className="w-full min-h-[100px] resize-none border-0 focus:ring-0 text-sm outline-none"
+                  placeholder="Enter your natural language query..."
+                  value={userQueryy || userQuery}
+                  onChange={(e) => {
+                    setuserQuery(e.target.value);
+                    setUserQueryy(e.target.value);
+                  }}
+                />
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <div className="flex items-center space-x-4">
+                    <label className="cursor-pointer">
+                      <Paperclip className="h-5 w-5 text-gray-500" />
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => uploadFile(e.target.files[0])}
+                        accept=".csv,.txt"
+                      />
+                    </label>
+                    <QueryInput
+                      onQueryChange={handleQueryChange}
+                      query={userQueryy}
+                      isLoading={loading}
+                    />
+                  </div>
+                  <button
+                    onClick={generateSQL}
+                    disabled={isLoading}
+                    className="flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-400"
+                  >
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    Generate
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-  
-          {display && (
-            <div className="rounded-xl w-[70vw] h-auto flex shadow-lg shadow-slate-300 flex-col mb-5">
-              {isLoading ? (
-                <Skeleton />
-              ) : (
-                <>
-                  <div className="flex w-full items-center justify-between border-b p-5">
-                    <div className="font-bold">Query Results</div>
-                    <button
-                      className="border border-gray-300 rounded-md flex gap-2 py-1 px-2 text-sm hover:bg-gray-100 active:scale-95"
-                      onClick={handleDownload}
-                    >
-                      <Download size={18} />
-                      <span>Download CSV</span>
-                    </button>
-                  </div>
-                  <div className="overflow-auto h-[56vh] px-3">
-                    <table className="table-auto w-full border-collapse">
-                      <thead>
-                        <tr>
-                          <th className="border-b px-4 py-3 text-left text-sm text-gray-400">
-                            INDEX
-                          </th>
-                          {dataRows &&
-                            dataRows.length > 0 &&
-                            dataRows[0].map((header, index) => (
-                              <th
-                                key={index}
-                                className="border-b px-4 py-3 text-left text-sm text-gray-400"
-                              >
-                                {header}
-                              </th>
-                            ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dataRows &&
-                          dataRows.slice(1).map((row, rowIndex) => (
-                            <tr key={rowIndex} className="text-gray-400">
-                              <td className="px-4 py-2 text-sm text-gray-700">
-                                {rowIndex + 1}
-                              </td>
-                              {row.map((cell, cellIndex) => (
-                                <td
-                                  key={cellIndex}
-                                  className="px-4 py-2 text-sm text-gray-700"
-                                >
-                                  {cell}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <ReactECharts
-                    option={chartOptions()}
-                    style={{ width: "100%", height: "400px" }}
-                  />
-                  <ReactECharts
-                    option={pieChartOptions()}
-                    style={{ width: "100%", height: "1000px" }}
-                  />
-                  <ReactECharts
-                    option={pieChartOptionss()}
-                    style={{ width: "100%", height: "1000px" }}
-                  />
-                </>
-              )}
+        </div>
+
+        {/* Results Section */}
+        {display && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Query Results</h2>
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="flex items-center px-3 py-1.5 bg-white border rounded-lg text-sm hover:border-gray-400 transition-colors"
+                  >
+                    {chartTypes.find(chart => chart.type === selectedChartType)?.label || "Select Chart"}
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </button>
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10">
+                      {chartTypes.map((chart) => (
+                        <button
+                          key={chart.type}
+                          className="flex items-center w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                          onClick={() => {
+                            setSelectedChartType(chart.type);
+                            setIsDropdownOpen(false);
+                          }}
+                        >
+                          <chart.icon className="h-4 w-4 mr-2" />
+                          {chart.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleDownload}
+                  className="flex items-center px-3 py-1.5 border rounded-lg text-sm hover:border-gray-400 transition-colors"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download CSV
+                </button>
+              </div>
             </div>
-          )}
-        </>
-      )}
-      
+
+            {isLoading ? (
+              <Skeleton />
+            ) : (
+              <div className="space-y-8">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-2 border-b text-left text-sm font-medium text-gray-500">
+                          INDEX
+                        </th>
+                        {dataRows?.[0]?.map((header, index) => (
+                          <th
+                            key={index}
+                            className="px-4 py-2 border-b text-left text-sm font-medium text-gray-500"
+                          >
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dataRows?.slice(1).map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                          <td className="px-4 py-2 border-b text-sm text-gray-700">
+                            {rowIndex + 1}
+                          </td>
+                          {row.map((cell, cellIndex) => (
+                            <td
+                              key={cellIndex}
+                              className="px-4 py-2 border-b text-sm text-gray-700"
+                            >
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Charts */}
+                <div className="space-y-8">
+                  <div className="h-[400px]">
+                    <ReactECharts
+                      option={chartOptions}
+                      style={{ height: '100%' }}
+                    />
+                  </div>
+                  {/* Add more charts as needed */}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
-  
-}
+};
 
 export default ChatPage;
+

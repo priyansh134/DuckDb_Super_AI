@@ -10,7 +10,7 @@ export function QueryInput({ onQueryChange, query, isLoading }) {
     // Check if the browser supports speech recognition
     if ("webkitSpeechRecognition" in window) {
       const recognitionInstance = new webkitSpeechRecognition();
-      recognitionInstance.continuous = false;
+      recognitionInstance.continuous = true;
       recognitionInstance.interimResults = false;
       recognitionInstance.lang = "en-US";
 
